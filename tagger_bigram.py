@@ -9,16 +9,16 @@ def compute_tag_bigram(corpus, is_count):
 
     res = dict()
 
-    for i, condition_word in enumerate(tags):
+    for i, condition_tag in enumerate(tags):
         condition_res = dict()
-        condition_size = words[condition_word]
+        condition_size = tags[condition_tag]
 
-        for word in words:
+        for tag in tags:
             if is_count:
-                condition_res[word] = bigrams.get((condition_word, word), 0)
+                condition_res[tag] = tag_bigrams.get((condition_tag, tag), 0)
             else:
-                condition_res[word] = bigrams.get((condition_word, word), 0) / condition_size
-        res[condition_word] = condition_res
+                condition_res[tag] = tag_bigrams.get((condition_tag, tag), 0) / condition_size
+        res[condition_tag] = condition_res
 
         if i % 100 == 0:
             print(i, '/', size)
@@ -27,22 +27,22 @@ def compute_tag_bigram(corpus, is_count):
 
 
 def compute_word_tag_conditional(corpus, is_count):
-    words = word_count(corpus)
-    bigrams = bigram_count(corpus)
-    size = len(words)
+    tags = tag_unigram_count(corpus)
+    word_tag = word_tag_count(corpus)
+    size = len(tags)
 
     res = dict()
 
-    for i, condition_word in enumerate(words):
+    for i, condition_tag in enumerate(tags):
         condition_res = dict()
-        condition_size = words[condition_word]
+        condition_size = tags[condition_tag]
 
         for word in words:
             if is_count:
-                condition_res[word] = bigrams.get((condition_word, word), 0)
+                condition_res[tag] = word_tag.get((condition_tag, tag), 0)
             else:
-                condition_res[word] = bigrams.get((condition_word, word), 0) / condition_size
-        res[condition_word] = condition_res
+                condition_res[tag] = tag_bigrams.get((condition_tag, tag), 0) / condition_size
+        res[condition_tag] = condition_res
 
         if i % 100 == 0:
             print(i, '/', size)
@@ -77,7 +77,7 @@ def word_tag_count(corpus):
         words, poses = to_words_and_pos(sentence)
         for i in range(len(words)):
             bigram.append(
-                (words[i], words[i + 1])
+                (poses[i], words[i])
             )
 
     return Counter(bigram)
