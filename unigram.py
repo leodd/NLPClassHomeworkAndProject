@@ -2,70 +2,69 @@ from utils import *
 from collections import Counter
 
 
-def compute_unigram(s, smoothing=None, is_count=False):
-    if smoothing == 'add-one':
-        return compute_unigram_add_one(s, is_count)
-    elif smoothing == 'good-turing':
-        return compute_unigram_good_turing(s, is_count)
-    else:
-        return compute_unigram_no_smoothing(s, is_count)
+class NoSmoothing:
+    def __init__(self, corpus=None):
+        self.words = None
+        self.word_size = 0
+
+        if corpus:
+            self.learn(corpus)
+
+    def learn(self, corpus):
+        self.words = word_count(corpus)
+        self.word_size = sum(self.words.values())
+
+    def p(self, word):
+        return self.words.get(word, 0) / self.word_size
+
+    def count(self, word):
+        return self.words.get(word, 0)
 
 
-def compute_unigram_no_smoothing(s, is_count):
-    words = word_count(s)
-    unigrams = word_count(s)
-    word_size = sum(words.values())
-    token_size = len(words)
+class AddOne:
+    def __init__(self, corpus=None):
+        self.words = None
+        self.word_size = 0
 
-    res = dict()
+        if corpus:
+            self.learn(corpus)
 
-    for word in words:
-        if is_count:
-            res[word] = unigrams.get(word, 0)
-        else:
-            res[word] = unigrams.get(word, 0) / word_size
+    def learn(self, corpus):
+        self.words = word_count(corpus)
+        self.word_size = sum(self.words.values())
 
-    return res
+    def p(self, word):
+        return (self.words.get(word, 0) + 1) / (self.word_size + len(self.words))
 
-
-def compute_unigram_add_one(s, is_count):
-    words = word_count(s)
-    unigrams = word_count(s)
-    word_size = sum(words.values())
-    token_size = len(words)
-
-    res = dict()
-
-    for word in words:
-        if is_count:
-            res[word] = (unigrams.get(word, 0) + 1) * word_size / (token_size + word_size)
-        else:
-            res[word] = (unigrams.get(word, 0) + 1) / (token_size + word_size)
-
-    return res
+    def count(self, word):
+        return self.p(word) * self.word_size
 
 
-def compute_unigram_good_turing(s, is_count):
-    words = word_count(s)
-    unigrams = word_count(s)
-    word_size = sum(words.values())
-    token_size = len(words)
+class GoodTuring:
+    def __init__(self, corpus=None):
+        self.words = None
+        self.word_size = 0
+        self.c_ = None
 
-    res = dict()
+        if corpus:
+            self.learn(corpus)
 
-    n = Counter()
+    def learn(self, corpus):
+        self.words = word_count(corpus)
+        self.word_size = sum(self.words.values())
+        token_size = len(self.words)
 
-    for word in words:
-        n[unigrams.get(word, 0)] += 1
+        n = Counter()
+        for word, count in self.words.items():
+            n[count] += 1
+        n[0] = 15000 - token_size
 
-    c_ = Counter()
-    for c in n:
-        c_[c] = (c + 1) * n[c + 1] / n[c]
+        self.c_ = Counter()
+        for c in n:
+            self.c_[c] = (c + 1) * n[c + 1] / n[c]
 
-    for word in words:
-        if is_count:
-            res[word] = c_[unigrams.get(word, 0)]
-        else:
-            res[word] = c_[unigrams.get(word, 0)] / word_size
+    def p(self, word):
+        return self.c_[self.words.get(word, 0)] * self.word_size
 
-    return res
+    def count(self, word):
+        return self.c_[self.words.get(word, 0)]

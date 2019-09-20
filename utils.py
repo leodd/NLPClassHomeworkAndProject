@@ -72,7 +72,7 @@ def sentence_probability(s, unigram, bigram):
     if len(words) == 0:
         return 0
 
-    p = unigram.get(words[0], 0)
+    p = unigram.p(words[0])
 
     print('p( {} ) = {}'.format(words[0], p))
     f = 'p( {} ) '.format(words[0])
@@ -81,7 +81,7 @@ def sentence_probability(s, unigram, bigram):
         w = words[i]
         w_ = words[i - 1]
 
-        pw_w = 0 if w not in bigram else bigram[w_].get(w, 0)
+        pw_w = bigram.p(w_, w)
 
         print('p( {} | {} ) = {}'.format(w, w_, pw_w))
         f += '* p( {} | {} ) '.format(w, w_)

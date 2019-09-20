@@ -2,93 +2,84 @@ from utils import *
 from collections import Counter
 
 
-def compute_bigram(s, smoothing=None, is_count=False):
-    if smoothing == 'add-one':
-        return compute_bigram_add_one(s, is_count)
-    elif smoothing == 'good-turing':
-        return compute_bigram_good_turing(s, is_count)
-    else:
-        return compute_bigram_no_smoothing(s, is_count)
+class NoSmoothing:
+    def __init__(self, corpus=None):
+        self.bigrams = None
+        self.words = None
+
+        if corpus:
+            self.learn(corpus)
+
+    def learn(self, corpus):
+        self.bigrams = bigram_count(corpus)
+        self.words = word_count(corpus)
+
+    def p(self, conditional_word, word):
+        if conditional_word in self.words:
+            return self.bigrams.get((conditional_word, word), 0) / self.words[conditional_word]
+        else:
+            return 0
+
+    def count(self, conditional_word, word):
+        return self.p(conditional_word, word) * self.words.get(conditional_word, 0)
 
 
-def compute_bigram_no_smoothing(s, is_count):
-    words = word_count(s)
-    bigrams = bigram_count(s)
-    size = len(words)
+class AddOne:
+    def __init__(self, corpus=None):
+        self.bigrams = None
+        self.words = None
 
-    res = dict()
+        if corpus:
+            self.learn(corpus)
 
-    for i, condition_word in enumerate(words):
-        condition_res = dict()
-        condition_size = words[condition_word]
+    def learn(self, corpus):
+        self.bigrams = bigram_count(corpus)
+        self.words = word_count(corpus)
 
-        for word in words:
-            if is_count:
-                condition_res[word] = bigrams.get((condition_word, word), 0)
-            else:
-                condition_res[word] = bigrams.get((condition_word, word), 0) / condition_size
-        res[condition_word] = condition_res
+    def p(self, conditional_word, word):
+        if conditional_word in self.words:
+            return (self.bigrams.get((conditional_word, word), 0) + 1) / (self.words[conditional_word] + len(self.words))
+        else:
+            return 0
 
-        if i % 100 == 0:
-            print(i, '/', size)
-
-    return res
+    def count(self, conditional_word, word):
+        return self.p(conditional_word, word) * self.words.get(conditional_word, 0)
 
 
-def compute_bigram_add_one(s, is_count):
-    words = word_count(s)
-    bigrams = bigram_count(s)
-    size = len(words)
+class GoodTuring:
+    def __init__(self, corpus=None):
+        self.bigrams = None
+        self.words = None
+        self.c_ = None
 
-    res = dict()
+        if corpus:
+            self.learn(corpus)
 
-    for i, condition_word in enumerate(words):
-        condition_res = dict()
-        condition_size = words[condition_word]
+    def learn(self, corpus):
+        self.bigrams = bigram_count(corpus)
+        self.words = word_count(corpus)
+        token_size = len(self.words)
 
-        for word in words:
-            if is_count:
-                condition_res[word] = (bigrams.get((condition_word, word), 0) + 1) * condition_size \
-                                      / (condition_size + size)
-            else:
-                condition_res[word] = (bigrams.get((condition_word, word), 0) + 1) / (condition_size + size)
-        res[condition_word] = condition_res
+        n = dict()
+        for (conditional_word, word), join_count in self.bigrams.items():
+            conditional_n = n.get(conditional_word, Counter({0: token_size}))
+            conditional_n[join_count] += 1
+            conditional_n[0] -= 1
+            n[conditional_word] = conditional_n
 
-        if i % 100 == 0:
-            print(i, '/', size)
+        self.c_ = dict()
+        for conditional_word, conditional_n in n.items():
+            conditional_c_ = Counter()
+            for c in conditional_n:
+                conditional_c_[c] = (c + 1) * conditional_n[c + 1] / conditional_n[c]
+            self.c_[conditional_word] = conditional_c_
 
-    return res
+    def p(self, conditional_word, word):
+        if conditional_word in self.words:
+            return self.c_[conditional_word][self.bigrams.get((conditional_word, word), 0)] / \
+                   self.words[conditional_word]
+        else:
+            return 0
 
-
-def compute_bigram_good_turing(s, is_count):
-    words = word_count(s)
-    bigrams = bigram_count(s)
-    size = len(words)
-
-    res = dict()
-
-    for i, condition_word in enumerate(words):
-        condition_res = dict()
-        condition_size = words[condition_word]
-
-        n = Counter()
-
-        for word in words:
-            n[bigrams.get((condition_word, word), 0)] += 1
-
-        c_ = Counter()
-        for c in n:
-            c_[c] = (c + 1) * n[c + 1] / n[c]
-
-        for word in words:
-            if is_count:
-                condition_res[word] = c_[bigrams.get((condition_word, word), 0)]
-            else:
-                condition_res[word] = c_[bigrams.get((condition_word, word), 0)] / condition_size
-        res[condition_word] = condition_res
-
-        if i % 100 == 0:
-            print(i, '/', size)
-
-    return res
-
+    def count(self, conditional_word, word):
+        return self.p(conditional_word, word) * self.words.get(conditional_word, 0)
