@@ -14,7 +14,8 @@ def compute_unigram(s, smoothing=None, is_count=False):
 def compute_unigram_no_smoothing(s, is_count):
     words = word_count(s)
     unigrams = word_count(s)
-    size = len(words)
+    word_size = sum(words.values())
+    token_size = len(words)
 
     res = dict()
 
@@ -22,7 +23,7 @@ def compute_unigram_no_smoothing(s, is_count):
         if is_count:
             res[word] = unigrams.get(word, 0)
         else:
-            res[word] = unigrams.get(word, 0) / size
+            res[word] = unigrams.get(word, 0) / word_size
 
     return res
 
@@ -30,15 +31,16 @@ def compute_unigram_no_smoothing(s, is_count):
 def compute_unigram_add_one(s, is_count):
     words = word_count(s)
     unigrams = word_count(s)
-    size = len(words)
+    word_size = sum(words.values())
+    token_size = len(words)
 
     res = dict()
 
     for word in words:
         if is_count:
-            res[word] = (unigrams.get(word, 0) + 1) * size / (size + size)
+            res[word] = (unigrams.get(word, 0) + 1) * word_size / (token_size + word_size)
         else:
-            res[word] = (unigrams.get(word, 0) + 1) / (size + size)
+            res[word] = (unigrams.get(word, 0) + 1) / (token_size + word_size)
 
     return res
 
@@ -46,7 +48,8 @@ def compute_unigram_add_one(s, is_count):
 def compute_unigram_good_turing(s, is_count):
     words = word_count(s)
     unigrams = word_count(s)
-    size = len(words)
+    word_size = sum(words.values())
+    token_size = len(words)
 
     res = dict()
 
@@ -63,6 +66,6 @@ def compute_unigram_good_turing(s, is_count):
         if is_count:
             res[word] = c_[unigrams.get(word, 0)]
         else:
-            res[word] = c_[unigrams.get(word, 0)] / size
+            res[word] = c_[unigrams.get(word, 0)] / word_size
 
     return res
