@@ -17,21 +17,28 @@ class BillsTagger:
 
         self.compute_most_possible_tag(words, poses_correct)
 
-        poses_current = list()
-        for word in words:
-            poses_current.append(self.most_possible_tag[word])
+        sentences = list()
+        for line in to_sentences(corpus):
+            words, poses_correct = to_words_and_pos(line)
+
+            poses_current = list()
+            for word in words:
+                poses_current.append(self.most_possible_tag[word])
+
+            sentences.append((words, poses_correct, poses_current))
 
         self.rules = list()
         while True:
-            rule, score = self.get_best_rule(words, poses_correct, poses_current)
+            rule, score = self.get_best_rule(sentences)
 
             if score <= 0:
                 break
 
             z, from_tag, to_tag = rule
-            for i in range(1, len(words)):
-                if poses_current[i - 1] == z and poses_current[i] == from_tag:
-                    poses_current[i] = to_tag
+            for words, poses_correct, poses_current in sentences:
+                for i in range(1, len(words)):
+                    if poses_current[i - 1] == z and poses_current[i] == from_tag:
+                        poses_current[i] = to_tag
 
             self.rules.append(rule)
             print(rule, score)
@@ -67,7 +74,7 @@ class BillsTagger:
         for word, counter in counter_dict.items():
             self.most_possible_tag[word] = max(counter.keys(), key=lambda w: counter[w])
 
-    def get_best_rule(self, words, poses_correct, poses_current):
+    def get_best_rule(self, sentences):
         best_rule = None
         best_score = 0
 
@@ -78,11 +85,12 @@ class BillsTagger:
 
                 num_good_transforms = Counter()
 
-                for i in range(1, len(words)):
-                    if poses_correct[i] == to_tag and poses_current[i] == from_tag:
-                        num_good_transforms[poses_current[i - 1]] += 1
-                    elif poses_correct[i] == from_tag and poses_current[i] == from_tag:
-                        num_good_transforms[poses_current[i - 1]] -= 1
+                for words, poses_correct, poses_current in sentences:
+                    for i in range(1, len(words)):
+                        if poses_correct[i] == to_tag and poses_current[i] == from_tag:
+                            num_good_transforms[poses_current[i - 1]] += 1
+                        elif poses_correct[i] == from_tag and poses_current[i] == from_tag:
+                            num_good_transforms[poses_current[i - 1]] -= 1
 
                 if len(num_good_transforms) == 0:
                     continue
