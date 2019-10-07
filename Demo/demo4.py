@@ -1,4 +1,4 @@
-from Viterbi import most_likely_tagging
+from Viterbi import most_likely_tagging, probability
 
 
 tag_set = {
@@ -26,6 +26,12 @@ tag_word_conditional = {
     'DT': {'Janet': 0, 'will': 0, 'back': 0, 'the': 0.506099, 'bill': 0}
 }
 
-print('Janet will back the bill', most_likely_tagging('Janet will back the bill', tag_set, tag_tag_conditional, tag_word_conditional))
-print('will Janet back the bill', most_likely_tagging('will Janet back the bill', tag_set, tag_tag_conditional, tag_word_conditional))
-print('back the bill Janet will', most_likely_tagging('back the bill Janet will', tag_set, tag_tag_conditional, tag_word_conditional))
+print('Janet will back the bill',
+      most_likely_tagging('Janet will back the bill', tag_set, tag_tag_conditional, tag_word_conditional),
+      probability('Janet will back the bill', tag_set, tag_tag_conditional, tag_word_conditional))
+print('will Janet back the bill',
+      most_likely_tagging('will Janet back the bill', tag_set, tag_tag_conditional, tag_word_conditional),
+      probability('will Janet back the bill', tag_set, tag_tag_conditional, tag_word_conditional))
+print('back the bill Janet will',
+      most_likely_tagging('back the bill Janet will', tag_set, tag_tag_conditional, tag_word_conditional),
+      probability('back the bill Janet will', tag_set, tag_tag_conditional, tag_word_conditional))
